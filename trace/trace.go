@@ -207,21 +207,22 @@ func (t *Trace) Send() {
 // Span represents a specific task or portion of an application. It has a time
 // and duration, and is linked to parent and children.
 type Span struct {
-	isAsync      bool
-	isSent       bool
-	isRoot       bool
-	children     []*Span
-	childrenLock sync.Mutex
-	ev           *libhoney.Event
-	spanID       string
-	parentID     string
-	parent       *Span
-	rollupFields map[string]float64
-	rollupLock   sync.Mutex
-	started      time.Time
-	trace        *Trace
-	eventLock    sync.Mutex
-	sendLock     sync.RWMutex
+	isAsync       bool
+	isSent        bool
+	isRoot        bool
+	children      []*Span
+	childrenLock  sync.Mutex
+	ev            *libhoney.Event
+	spanID        string
+	parentID      string
+	grandParentID string
+	parent        *Span
+	rollupFields  map[string]float64
+	rollupLock    sync.Mutex
+	started       time.Time
+	trace         *Trace
+	eventLock     sync.Mutex
+	sendLock      sync.RWMutex
 }
 
 // newSpan takes care of *some* of the initialization necessary to create a new
@@ -319,6 +320,9 @@ func (s *Span) sendLocked() {
 	s.ev.AddField("trace.trace_id", s.trace.traceID)
 	if s.parentID != "" {
 		s.AddField("trace.parent_id", s.parentID)
+	}
+	if s.grandParentID != "" {
+		s.AddField("trace.grandparent_id", s.parentID)
 	}
 	s.ev.AddField("trace.span_id", s.spanID)
 	// add this span's rollup fields to the event
@@ -495,6 +499,7 @@ func (s *Span) createChildSpan(ctx context.Context, async bool) (context.Context
 	newSpan := newSpan()
 	newSpan.parent = s
 	newSpan.parentID = s.spanID
+	newSpan.grandParentID = s.parentID
 	newSpan.trace = s.trace
 	newSpan.ev = s.trace.builder.NewEvent()
 	newSpan.isAsync = async
