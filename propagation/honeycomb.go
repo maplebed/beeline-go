@@ -51,12 +51,18 @@ func MarshalHoneycombTraceContext(prop *PropagationContext) string {
 		datasetClause = fmt.Sprintf("dataset=%s,", url.QueryEscape(prop.Dataset))
 	}
 
+	var gpClause string
+	if prop.GrandParentID != "" {
+		gpClause = fmt.Sprintf("grandparent_id=%s,", url.QueryEscape(prop.GrandParentID))
+	}
+
 	return fmt.Sprintf(
-		"%d;trace_id=%s,parent_id=%s,%scontext=%s",
+		"%d;trace_id=%s,parent_id=%s,%s%scontext=%s",
 		TracePropagationVersion,
 		prop.TraceID,
 		prop.ParentID,
 		datasetClause,
+		gpClause,
 		tcB64,
 	)
 }
@@ -90,6 +96,8 @@ func unmarshalHoneycombTraceContextV1(header string) (*PropagationContext, error
 			prop.TraceID = keyval[1]
 		case "parent_id":
 			prop.ParentID = keyval[1]
+		case "grandparent_id":
+			prop.GrandParentID = keyval[1]
 		case "dataset":
 			prop.Dataset, _ = url.QueryUnescape(keyval[1])
 		case "context":

@@ -11,11 +11,12 @@ import (
 // PropagationContext contains information about a trace that can cross process boundaries.
 // Typically this information is parsed from an incoming trace context header.
 type PropagationContext struct {
-	TraceID      string
-	ParentID     string
-	Dataset      string
-	TraceContext map[string]interface{}
-	TraceFlags   byte
+	TraceID       string
+	ParentID      string
+	GrandParentID string
+	Dataset       string
+	TraceContext  map[string]interface{}
+	TraceFlags    byte
 }
 
 // hasTraceID checks that the trace ID is valid.

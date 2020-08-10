@@ -24,6 +24,12 @@ func MarshalAmazonTraceContext(prop *PropagationContext) string {
 	// the value of the Self field."
 	h := fmt.Sprintf("Root=%s;Parent=%s", prop.TraceID, prop.ParentID)
 
+	// add grand parent as well though it will be ignored if this span traverses a load balancer. It will
+	// still be useful in case AWS headers are used with no load balancer present.
+	if prop.GrandParentID != "" {
+		h = fmt.Sprintf("%s;GrandParent=%s", h, prop.GrandParentID)
+	}
+
 	if len(prop.TraceContext) != 0 {
 		elems := make([]string, len(prop.TraceContext))
 		i := 0
@@ -65,7 +71,7 @@ func UnmarshalAmazonTraceContext(header string) (*PropagationContext, error) {
 	// and root as the trace id.
 	prop := &PropagationContext{}
 	prop.TraceContext = make(map[string]interface{})
-	var parent string
+	var parent, grandParent string
 	for _, segment := range segments {
 		keyval := strings.SplitN(segment, "=", 2)
 		if len(keyval) < 2 {
@@ -78,15 +84,27 @@ func UnmarshalAmazonTraceContext(header string) (*PropagationContext, error) {
 			prop.TraceID = keyval[1]
 		case "parent":
 			parent = keyval[1]
+		case "grandparent":
+			grandParent = keyval[1]
 		default:
 			prop.TraceContext[keyval[0]] = keyval[1]
 		}
 	}
 
-	// Our primary use case is to support load balancers, so favor self over parent.
-	// If, however, a parent is present and self is not, use it.
-	if prop.ParentID == "" && parent != "" {
+	switch {
+	case prop.ParentID == "" && parent != "" && grandParent != "":
+		// if self was empty but both parent and grandparent exist, use parent them both.
+		// this happens when there is no load balancer
 		prop.ParentID = parent
+		prop.GrandParentID = grandParent
+	case prop.ParentID == "" && parent != "":
+		// self was empty, parent exists, grandparent is empty. This happens when there is
+		// no load balancer and the sending process had no parent span.
+		prop.ParentID = parent
+	case prop.ParentID != "" && parent != "":
+		// self and parent are not empty but grandparent is empty. This happens when the
+		// request did traverse a load balancer and the calling process had no parent span.
+		prop.GrandParentID = parent
 	}
 
 	// If no header is provided to an ALB or ELB, it will generate a header
