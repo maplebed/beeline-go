@@ -283,12 +283,13 @@ func TestUnmarshalAmazonTraceContext(t *testing.T) {
 			false,
 		},
 		{
-			"self, parent and root fields. parent should end up dropped",
+			"self, parent and root fields. parent should be grandparent",
 			"Root=foo;Self=baz;Parent=bar",
 			&PropagationContext{
-				TraceID:  "foo",
-				ParentID: "baz",
-				TraceContext: map[string]interface{}{},
+				TraceID:       "foo",
+				ParentID:      "baz",
+				GrandParentID: "bar",
+				TraceContext:  map[string]interface{}{},
 			},
 			false,
 		},
