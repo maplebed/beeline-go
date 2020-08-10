@@ -322,7 +322,7 @@ func (s *Span) sendLocked() {
 		s.AddField("trace.parent_id", s.parentID)
 	}
 	if s.grandParentID != "" {
-		s.AddField("trace.grandparent_id", s.parentID)
+		s.AddField("trace.grandparent_id", s.grandParentID)
 	}
 	s.ev.AddField("trace.span_id", s.spanID)
 	// add this span's rollup fields to the event
