@@ -131,12 +131,13 @@ func (t *Trace) AddField(key string, val interface{}) {
 // services so they may start a new trace that will be connected to this trace.
 // The serialized form may be passed to NewTrace() in order to create a new
 // trace that will be connected to this trace.
-func (t *Trace) serializeHeaders(spanID string) string {
+func (t *Trace) serializeHeaders(span *Span) string {
 	var prop = &propagation.PropagationContext{
-		TraceID:      t.traceID,
-		ParentID:     spanID,
-		Dataset:      t.builder.Dataset,
-		TraceContext: t.traceLevelFields,
+		TraceID:       t.traceID,
+		ParentID:      span.spanID,
+		GrandParentID: span.grandParentID,
+		Dataset:       t.builder.Dataset,
+		TraceContext:  t.traceLevelFields,
 	}
 	t.tlfLock.RLock()
 	defer t.tlfLock.RUnlock()
@@ -411,7 +412,7 @@ func (s *Span) CreateChild(ctx context.Context) (context.Context, *Span) {
 // The serialized form may be passed to NewTrace() in order to create a new
 // trace that will be connected to this trace.
 func (s *Span) SerializeHeaders() string {
-	return s.trace.serializeHeaders(s.spanID)
+	return s.trace.serializeHeaders(s)
 }
 
 // removeChildSpan remove a child which has been sent. It is intended to be

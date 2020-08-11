@@ -140,7 +140,7 @@ func TestMarshalHoneycombTraceContext(t *testing.T) {
 	for _, tt := range testCases {
 		marshaled := MarshalTraceContext(tt.prop)
 		assert.Equal(t, tt.marshaledProp, marshaled, tt.name)
-		unmarshaled, err := UnmarshalTraceContext(tt.marshaledProp)
+		// unmarshaled, err := UnmarshalTraceContext(tt.marshaledProp)
 	}
 
 }
