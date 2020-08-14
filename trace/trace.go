@@ -63,9 +63,11 @@ func NewTraceFromPropagationContext(ctx context.Context, prop *propagation.Propa
 		traceLevelFields: make(map[string]interface{}),
 	}
 
+	var grandparentID string
 	if prop != nil {
 		trace.traceID = prop.TraceID
 		trace.parentID = prop.ParentID
+		grandparentID = prop.GrandParentID
 		for k, v := range prop.TraceContext {
 			trace.traceLevelFields[k] = v
 		}
@@ -83,6 +85,7 @@ func NewTraceFromPropagationContext(ctx context.Context, prop *propagation.Propa
 	if trace.parentID != "" {
 		rootSpan.parentID = trace.parentID
 	}
+	rootSpan.grandParentID = grandparentID
 	rootSpan.ev = trace.builder.NewEvent()
 	rootSpan.trace = trace
 	trace.rootSpan = rootSpan
